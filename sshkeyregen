@@ -1,0 +1,53 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:             sshkeyregen
+# Required-Start:       $remote_fs $syslog
+# Required-Stop:        $remote_fs $syslog
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# X-Start-Before:       sshd
+# Short-Description:    Generates new SSH host keys at firstboot
+# Description:          Generates new SSH host keys at firstboot
+### END INIT INFO
+
+set -e
+
+. /lib/lsb/init-functions
+
+regen_ssh_keys() {
+	for i in `echo rsa dsa ecdsa`;do
+		ssh-keygen -f /etc/ssh/ssh_host_"$i"_key -t "$i" -N "" &&
+		    echo "`echo $i|tr [a-z] [A-Z]` Ok" ||
+		    echo "`echo $i|tr [a-z] [A-Z]` Ko"
+	done
+	return 0
+}
+
+delete_ssh_keys() {
+	find /etc/ssh -name 'ssh_host_*' -exec rm -f {} \;
+	return 0
+}
+
+case "$1" in
+start)
+	log_action_msg "Regenerate SSH keys"
+	regen_ssh_keys
+	log_end_msg 0
+	log_action_msg "Remove sshkeyregen"
+	update-rc.d sshkeyregen remove
+;;
+stop)
+	log_end_msg 0
+;;
+restart)
+	delete_ssh_keys
+	regen_ssh_keys
+	log_end_msg 0
+;;
+*)
+	log_action_msg "Usage: /etc/init.d/sshkeyregen {start|stop|restart}"
+	exit 1
+esac
+
+exit 0
