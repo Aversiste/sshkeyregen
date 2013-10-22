@@ -16,11 +16,15 @@ set -e
 . /lib/lsb/init-functions
 
 regen_ssh_keys() {
-	for i in `echo rsa dsa ecdsa`;do
-		ssh-keygen -f /etc/ssh/ssh_host_"$i"_key -t "$i" -N "" &&
-		    echo "`echo $i|tr [a-z] [A-Z]` Ok" ||
-		    echo "`echo $i|tr [a-z] [A-Z]` Ko"
-	done
+	if ssh-keygen -A;then
+		return $?
+	else
+		for i in `echo rsa dsa ecdsa`;do
+			ssh-keygen -f/etc/ssh/ssh_host_"$i"_key -t "$i" -N "" &&
+			    echo "`echo $i|tr [a-z] [A-Z]` Ok" ||
+			    echo "`echo $i|tr [a-z] [A-Z]` Ko"
+		done
+	fi
 	return 0
 }
 
